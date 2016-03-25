@@ -1,0 +1,3 @@
+xgb 100 rounds had about 0.52 in cross validation and on the public leaderboard.
+xgb1500 (dumb mapping of NAs) had clf$bestScore of 0.463682, but got 0.45684 on the public leaderboard. Quite bad.
+3/20 changing NAs to -1 instead of average. Did 100 rounds with 10-fold CV. Scores on CV had mean 0.5217247, max 0.527286, min 0.518347.
