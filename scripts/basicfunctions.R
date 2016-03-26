@@ -67,13 +67,13 @@ caretcv <- function(x,y){
   
   
   
-runxgb <- function(train, cvinx){  
-  md <- 11 # grid search 2, 4, 6, 8, 10
-  ss <- .96 # grid search .5, .75, .96
-  cs <- 0.45 # grid search .4, .6, .8, 1.0
+runxgb <- function(train, cvinx, ss, nrounds){  
+  md <- 10 # grid search 2, 4, 6, 8, 10
+  # ss <- .96 # grid search .5, .75, 1
+  cs <- 0.4 # grid search .4, .6, .8, 1.0
   mc <- 3 # /% of rare events ????
   np <- 1
-  nrounds <- 950
+  nrounds <- nrounds
   early.stop.round <- 300
   dval <- xgb.DMatrix(data.matrix(train[cvinx,-(1:2)]), label = train$target[cvinx])
   dtrain <- xgb.DMatrix(data.matrix(train[-cvinx,-(1:2)]), label = train$target[-cvinx])
@@ -88,7 +88,6 @@ runxgb <- function(train, cvinx){
                 min_child_weight=mc,
                 num_parallel_tree=np )
   system.time(clf <- xgb.train(params=param, data=dtrain, nrounds=nrounds, verbose=1,
-                               early.stop.round = early.stop.round, watchlist = watchlist, 
-                               maximize = F))
+                               watchlist = watchlist, early.stop.round = early.stop.round, maximize = F))
   return(clf)
 }
