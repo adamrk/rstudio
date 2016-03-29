@@ -30,6 +30,31 @@ natoneg <- function(df, leaveout = c()){
   return(df)
 }
 
+prodfeatures <- function(df, use = c()){
+  cols <- names(df)[which(names(df) %in% use)]
+  number <- length(cols)
+  for(i in 1:(number - 1)){
+    for(j in (i+1):number){
+      name <- paste(cols[i], cols[j], sep = "")
+      df[[name]] <- df[[cols[i]]] * df[[cols[j]]]
+    }
+  }
+  return(df)
+}
+
+onehot <- function(df, catcols){
+  for(col in catcols){
+    values <- names(table(df[[col]]))
+    number <- length(values)
+    for(i in 1:number){
+      newname <- paste(col, "h", i, sep = "")
+      df[[newname]] <- as.numeric(df[[col]] == values[i])
+    }
+    df[[col]] <- NULL
+  }
+  return(df)
+}
+
 makeindices <- function(nrows, nrounds){
   indices <- list()
   cvsize <- nrows %/% nrounds
@@ -42,9 +67,9 @@ makeindices <- function(nrows, nrounds){
 }
 
 caretcv <- function(x,y){
-  xgb_grid <- expand.grid(nrounds = 1000,
-                          max_depth = c(8,10),
-                          colsample_bytree = c(.8, 1.0),
+  xgb_grid <- expand.grid(nrounds = 1200,
+                          max_depth = c(10,12),
+                          colsample_bytree = c(1.0),
                           min_child_weight = 3,
                           eta = .01,
                           gamma = 0)
@@ -67,16 +92,16 @@ caretcv <- function(x,y){
   
   
   
-runxgb <- function(train, cvinx, ss, nrounds){  
+runxgb <- function(train, cvinx, nrounds){  
   md <- 10 # grid search 2, 4, 6, 8, 10
-  # ss <- .96 # grid search .5, .75, 1
+  ss <- .75 # grid search .5, .75, 1
   cs <- 0.4 # grid search .4, .6, .8, 1.0
   mc <- 3 # /% of rare events ????
   np <- 1
   nrounds <- nrounds
   early.stop.round <- 300
   dval <- xgb.DMatrix(data.matrix(train[cvinx,-(1:2)]), label = train$target[cvinx])
-  dtrain <- xgb.DMatrix(data.matrix(train[-cvinx,-(1:2)]), label = train$target[-cvinx])
+  dtrain <- xgb.DMatrix(Matrix(train[-cvinx,-(1:2)], sparse = TRUE), label = train$target[-cvinx])
   watchlist <- list(val=dval, train=dtrain)
   param = list( objective='binary:logistic',
                 booster='gbtree',

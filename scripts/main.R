@@ -1,11 +1,14 @@
-#setwd('data/R/BNP/main')
+setwd('data/R/BNP/main')
 library(xgboost)
 library(caret)
 library(plyr)
 train <- read.csv('../BNPdata/train.csv', stringsAsFactors = F)
 test <- read.csv('../BNPdata/test.csv', stringsAsFactors = F)
 test$target <- -1
+catcols <- c("v3", "v24", "v30", "v31", "v47", "v52", "v66", "v71", "v74", "v75", "v79", "v91",
+             "v107", "v110", "v112", "v113")
 all <- rbind(train, test)
+all <- onehot(all, catcols)
 all <- dumbcat(all)
 all <- natoneg(all)
 # 107: exact same as 91 
@@ -28,35 +31,32 @@ test <- all[which(all$target == -1), ]
 remove(all)
 
 
-#train$newtarget <- rep("False")
-#train[which(train$target == 1), "newtarget"] <- rep("True")
-#target <- as.factor(train$newtarget)
-#train$newtarget <- NULL
-
-#set.seed(0)
-#system.time(model <- caretcv(as.matrix(train[,-(1:2)]), target))
+train$newtarget <- rep("False")
+train[which(train$target == 1), "newtarget"] <- rep("True")
+target <- as.factor(train$newtarget)
+train$newtarget <- NULL
 
 set.seed(0)
-cvindices <- makeindices(nrow(train), 5)
-basic <- data.frame(round=integer(), ss=double(), index=integer(), 
-                    score=double(), size=character(), stringsAsFactors = F)
-for(i in 1:5){
-  for(ss in c(.5, .75, 1)){
-    clf<-runxgb(train, cvindices[[i]], ss, 1000)
-    inx <- clf$bestInd
-    score <- clf$bestScore
-    size <- as.numeric(object.size(clf))/1000000
-    basic <- rbind(basic, data.frame(round=i, ss=ss, index=inx, score=score, 
-                                     size=size, stringsAsFactors = F))
-    #time <- format(Sys.time(), "%Y%m%d%T%H%M%S")
-    #xgb.save(clf, paste("xgb_", time, ".model", sep = ""))
-    #write.csv(basic, paste("gridres_", time, ".csv", sep = ""))
-    remove(clf)
-  }
-}
+system.time(model <- caretcv(as.matrix(train[,-(1:2)]), target))
 
-time <- format(Sys.time(), "%Y%m%d%T%H%M%S")
-write.csv(basic, paste("gridsearch_", time, ".csv", sep = ""))
+# set.seed(0)
+# cvindices <- makeindices(nrow(train), 5)
+# basic <- data.frame(round=integer(), index=integer(), 
+#                     score=double(), size=character(), stringsAsFactors = F)
+# for(i in 1:5){
+#   clf<-runxgb(newtrain, cvindices[[i]], 2)
+#   inx <- clf$bestInd
+#   score <- clf$bestScore
+#   size <- as.numeric(object.size(clf))/1000000
+#   basic <- rbind(basic, data.frame(round=i, index=inx, score=score, 
+#                                    size=size, stringsAsFactors = F))
+#   #time <- format(Sys.time(), "%Y%m%d%T%H%M%S")
+#   #xgb.save(clf, paste("xgb_", time, ".model", sep = ""))
+#   #write.csv(basic, paste("gridres_", time, ".csv", sep = ""))
+# }
+# 
+# time <- format(Sys.time(), "%Y%m%d%T%H%M%S")
+# write.csv(basic, paste("gridsearch_", time, ".csv", sep = ""))
 
 # pred1 <- predict(clf, data.matrix(test[,-(1:2)]), ntreelimit=clf$bestInd)
 # submission <- data.frame(ID=test$ID, PredictedProb=pred1)
